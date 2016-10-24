@@ -134,31 +134,21 @@ void *parseHttpReq(void *arg)
     v1 = strcmp(version, "HTTP/1.0\r\n");
     v2 = strcmp(version, "HTTP/1.1\r\n");
     if(!v1)
-    {
-	strcpy(version, "HTTP/1.0");
-    }
+	    strcpy(version, "HTTP/1.0");
     else
-    {
         strcpy(version, "HTTP/1.1");
-    }
     
     ///Send back a 400 error message
     if((!v1) || (!v2))
-    {
         badRequest(sock);
-    }
     else
     {
         //See if the correct method is used -- only handle GET
         m = strcmp(method, "GET");
         if(m == 0)
-        {
-	    serve(sock, path);	//Send file
-        }
-	else
-	{
-	    notGet(sock);
-        }
+	        serve(sock, path);	//Send file
+	    else
+	        notGet(sock);
     }
 }	//End of parseHttpReq
 
