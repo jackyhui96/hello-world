@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netdb.h>
+#include <fcntl.h> // for open
+#include <unistd.h> // for close
 
 #define SERVER "Server: Dynamic Thread\n"
 #define CONTENT "Content-Type: text/html\r\n"
@@ -58,7 +60,7 @@ int main(int argc, char *argv[])
     if(result != 0)
     {
         fprintf(stderr, "Could not bind to port!\n");
-        close(listenSock);
+	close(listenSock);
         exit(1);
     }
 
@@ -69,58 +71,58 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Cannot listen on socket!\n");
         close(listenSock);
         exit(1);
-    }
+    }
 
     while(1)
-    {
+    {
         struct sockaddr_in client = {0};
-        int newSock = 0;
-        int clientL = sizeof(client);
+	int newSock = 0;
+	int clientL = sizeof(client);
 
-        //accept connections
-        newSock = accept(listenSock, (struct sockaddr*)&client, &clientL);
-        if(newSock == -1)
-        {
+	//accept connections
+	newSock = accept(listenSock, (struct sockaddr*)&client, &clientL);
+	if(newSock == -1)
+	{
             fprintf(stderr, "Cannot accept connection!\n");
-            close(listenSock);
-            exit(1);
-        }
-        else
-        {
-            //Create a thread for each incoming connection
-            result = pthread_create(&thread, NULL, parseHttpReq, (void*) newSock);
-            if(result != 0)
-            { 
+	    close(listenSock);
+	    exit(1);
+	}
+	else
+	{
+	    //Create a thread for each incoming connection
+	    result = pthread_create(&thread, NULL, parseHttpReq, (void*) newSock);
+	    if(result != 0)
+	    { 
                 fprintf(stderr, "Could not create thread!\n");
-                close(listenSock);
-                exit(1);
-            }
-            pthread_detach(thread);
-            sched_yield();
+		close(listenSock);
+		exit(1);
+	    }
+	    pthread_detach(thread);
+	    sched_yield();
         }//End of else -- could accept
     }//End of while
     close(listenSock);
-    return 0;
+    return 0;
 }//End of main
- 
+
 void *parseHttpReq(void *arg)
 {
     int sock;
-    char buffer[1024];
-    int readIn;
-    char *method, *path, *version;
-    int v1, v2, m;
+    char buffer[1024];
+    int readIn;
+    char *method, *path, *version;
+    int v1, v2, m;
 
-    //cast sock back to int
-    sock = (int)arg;
+    //cast sock back to int
+    sock = (int)arg;
 
     //Get input from client
-    readIn = recv(sock, buffer, 1024, 0);
-    buffer[readIn] = '\0';
+    readIn = recv(sock, buffer, 1024, 0);
+    buffer[readIn] = '\0';
 
     //parse the HTTP method, path to the file and the HTTP version
-    method = (char*)malloc(sizeof(buffer)+1);
-    strcpy(method, buffer);  //copy header data into method
+    method = (char*)malloc(sizeof(buffer)+1);
+    strcpy(method, buffer);	//copy header data into method
     method = strtok(method, " ");
     printf("%s\n", method);
     path = strtok(path, " ");
@@ -133,9 +135,9 @@ void *parseHttpReq(void *arg)
     v2 = strcmp(version, "HTTP/1.1\r\n");
     if(!v1)
     {
-        strcpy(version, "HTTP/1.0");
+	strcpy(version, "HTTP/1.0");
     }
-    else
+    else
     {
         strcpy(version, "HTTP/1.1");
     }
@@ -145,21 +147,21 @@ void *parseHttpReq(void *arg)
     {
         badRequest(sock);
     }
-    else 
-    {
+    else
+    {
         //See if the correct method is used -- only handle GET
         m = strcmp(method, "GET");
         if(m == 0)
         {
-            serve(sock, path);  //Send file
+	    serve(sock, path);	//Send file
         }
-        else
-        {
-            notGet(sock);
+	else
+	{
+	    notGet(sock);
         }
     }
-}   //End of parseHttpReq
- 
+}	//End of parseHttpReq
+
 void badRequest(int sock)
 {
     char buffer[1024];
@@ -177,7 +179,7 @@ void badRequest(int sock)
     strcpy(buffer, "<body>\n<p>400 Bad Request.</p>\n</body>\n</html>\r\n");
     write(sock, buffer, strlen(buffer));
 }   //End of badRequest
- 
+
 void goodRequest(int sock)
 {
     char buffer[1024];
@@ -228,40 +230,38 @@ void notFound(int sock)
     strcpy(buffer, "<body>\n<p>404 Request file not found.</p>\n</body>\n</html>\r\n");
     write(sock, buffer, strlen(buffer));
 }//End of notFound
- 
+
 void outputFile(int sock, FILE *html)
 { 
-    char buffer[1024];  //Only supports small files
-   
+    char buffer[1024];    //Only supports small files
     //Read in file and store in buffer
     fgets(buffer, sizeof(buffer), html);
     while(!feof(html))
     {
         send(sock, buffer, strlen(buffer), 0);
-        fgets(buffer, sizeof(buffer), html);
-    }//End of while
-
+	fgets(buffer, sizeof(buffer), html);
+    }//End of while
 }//End of output file
-     
+
 void serve(int sock, char *path)
 {
     FILE *html = NULL;
     char buffer[1024];
-    int num = 1;   
+    int num = 1;
 
     //determine file name
     if(strcmp(path, "/"))
-        strcpy(path, "index.html");  
+	strcpy(path, "index.html");
     //Open file
     html = fopen(path, "r");
     if(html == NULL)
         notFound(sock);
-    else
-    {
-        goodRequest(sock);
-        outputFile(sock, html);
-    }//Send file
-    
+    else
+    {
+	goodRequest(sock);
+	outputFile(sock, html);
+    }//Send file
+
     //Close file
     fclose(html);
 }//End of serve
