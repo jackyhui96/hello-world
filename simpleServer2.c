@@ -10,13 +10,13 @@
 
 #define SERVER "Server: Dynamic Thread\n"
 #define CONTENT "Content-Type: text/html\r\n"
-void *parseHttpReq(void *arg); //Parse the HTTP request
-void badRequest(int sock);  //Send HTTP header for bad request (400)
-void serve(int sock, char *path);  //Serve the file
-void goodRequest(int sock);  //Send HTTP header for good request (200)
-void notGet(int sock); //Send HTTP header for unimplemented method (501)
-void notFound(int sock); //Send HTTP header when a file is not found (404)
-void outputFile(int sock, FILE *html); //Reads input from file and sends it to client
+void *parseHttpReq(void *arg);          //Parse the HTTP request
+void badRequest(int sock);              //Send HTTP header for bad request (400)
+void serve(int sock, char *path);       //Serve the file
+void goodRequest(int sock);             //Send HTTP header for good request (200)
+void notGet(int sock);                  //Send HTTP header for unimplemented method (501)
+void notFound(int sock);                //Send HTTP header when a file is not found (404)
+void outputFile(int sock, FILE *html);  //Reads input from file and sends it to client
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     if(argc != 2)
     { fprintf(stderr, "Port number not input!\n");
         exit(1);
-    }
+    }
     
     //Create socket
     listenSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -56,16 +56,16 @@ int main(int argc, char *argv[])
     //Bind socket to port
     result = bind(listenSock, (struct sockaddr*)&server, sizeof(server));
     if(result != 0)
-    {
+    {
         fprintf(stderr, "Could not bind to port!\n");
         close(listenSock);
         exit(1);
-    }
+    }
 
     //Listen for client connections
     result = listen(listenSock, 5);
     if(result == -1)
-    {
+    {
         fprintf(stderr, "Cannot listen on socket!\n");
         close(listenSock);
         exit(1);
